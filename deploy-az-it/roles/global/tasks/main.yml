@@ -1,0 +1,94 @@
+---
+
+#
+# WARNING
+# This role must be executed first in order to create the
+# necessary resources for the following deployments
+#
+
+
+# ---
+# Delete GrpeRessGrp4 resource group if 'do_purge' = yes
+# ---
+- name: AZURE - Purge old resource group - GrpeRessGrp4
+  azure_rm_resourcegroup:
+    name: GrpeRessGrp4
+    state: absent
+  when: do_purge | bool
+
+# ---
+# Creation of the new resource group 'GrpeRessGrp4'
+# ---
+- name: AZURE - Resource group creation - GrpeRessGrp4
+  azure_rm_resourcegroup:
+    name: GrpeRessGrp4
+    location: japanwest
+
+# ---
+# Creation of security groups for linux and windows-like os
+# ---
+- name: AZURE - Security group creation - myNetworkSG-linux (SSH/WEB)
+  azure_rm_securitygroup:
+    resource_group: GrpeRessGrp4
+    name: myNetworkSG-linux
+    rules:
+      - name: Allow_SSH
+        protocol: Tcp
+        destination_port_range: 22
+        access: Allow
+        priority: 1001
+        direction: Inbound
+      - name: Allow_Web_Traffic
+        protocol: Tcp
+        destination_port_range:
+          - 80
+          - 443
+        access: Allow
+        priority: 1002
+        direction: Inbound
+
+- name: AZURE - Security group creation - myNetworkSG-windows (RDP/WEB/PS)
+  azure_rm_securitygroup:
+    resource_group: GrpeRessGrp4
+    name: myNetworkSG-windows
+    rules:
+      - name: Allow_RDP
+        protocol: Tcp
+        destination_port_range: 3389
+        access: Allow
+        priority: 1003
+        direction: Inbound
+      - name: Allow_Web_Traffic
+        protocol: Tcp
+        destination_port_range:
+          - 80
+          - 443
+        access: Allow
+        priority: 1004
+        direction: Inbound
+      - name: Allow_Powershell_Remoting
+        protocol: Tcp
+        destination_port_range:
+          - 5985
+          - 5986
+        access: Allow
+        priority: 1005
+        direction: Inbound
+
+# ---
+# Virtual network and subnetwork definitions
+# ---
+- name: AZURE - Virtual network creation - myNetwork
+  azure_rm_virtualnetwork:
+    resource_group: GrpeRessGrp4
+    name: myNetwork
+    address_prefixes: "10.0.0.0/16"
+
+- name: AZURE - Subnet creation - mySubnet
+  azure_rm_subnet:
+    resource_group: GrpeRessGrp4
+    name: mySubnet
+    address_prefix: "10.0.1.0/24"
+    virtual_network: myNetwork
+
+...

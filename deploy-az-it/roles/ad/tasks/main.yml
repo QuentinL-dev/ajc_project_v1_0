@@ -23,6 +23,7 @@
 - name: AZURE - VM creation - ADGrp4
   azure_rm_virtualmachine:
     resource_group: GrpeRessGrp4
+    os_type: Windows
     name: ADGrp4
     vm_size: Standard_DS1_v2
     admin_username: gui
