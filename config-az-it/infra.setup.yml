@@ -1,0 +1,196 @@
+---
+
+#
+# PROJECT INFRASTRUCTURE SETUP WITH ANSIBLE
+#
+#
+# INFORMATIONS
+#
+# Maintainer:     AJC-GR4
+# Version:        1
+# Release date:   05-17-2021
+#
+#
+# REQUIREMENTS
+#
+# 1. Ansible
+# 2. Remote Host OS: Debian-like (because of APT usage)
+# 3. Stable SSH connexion with keys
+#
+#
+# NOTE
+#
+# 1. Do not forget to configure the ../hosts file
+# 2. Add your settings in the ./vars/vars.yml file
+#
+
+
+- name: PROJECT INFRASTRUCTURE SETUP
+  hosts: azure-all-linux
+  gather_facts: yes
+  remote_user: "{{ admin_user_name }}"  # Connection as <admin_user_name> ...
+  become: yes                           # ... with privilege escalation tool
+  become_method: su
+  become_user: root
+
+
+  vars_files:
+    - vars/vars.yml
+
+
+  tasks:
+
+    # ---
+    # Installation of required packages and tools
+    # ---
+    - name: SYSTEM - Useful package installation
+      apt:
+        name: "{{ package_list }}"
+        state: present
+        update_cache: yes
+
+    # ---
+    # Zsh shell configuration
+    # ---
+    - name: SYSTEM - Clone oh_my_zsh
+      git:
+        repo: "{{ oh_my_zsh_repo }}"
+        dest: "/home/{{ admin_user_name }}/.oh-my-zsh"
+
+    - name: SYSTEM - Set '.zshrc' configuration file
+      copy:
+        remote_src: "yes"
+        src: "/home/{{ admin_user_name }}/.oh-my-zsh/templates/zshrc.zsh-template"
+        dest: "/home/{{ admin_user_name }}/.zshrc"
+
+    # ---
+    # Bash shell configuration
+    # ---
+    - name: SYSTEM - Set '.bashrc' configuration file
+      template:
+        src: ./templates/bashrc.j2
+        dest: "/home/{{ admin_user_name }}/.bashrc"
+
+    # ---
+    # Set default shell
+    # ---
+    - name: SYSTEM - Set default shell
+      user:
+        name: "{{ admin_user_name }}"
+        shell: "{{ shell }}"
+
+    # ---
+    # Set vim tools and configurations
+    # ---
+    - name: VIM - Set '.vimrc' configuration file
+      template:
+        src: ./templates/vimrc.j2
+        dest: "/home/{{ admin_user_name }}/.vimrc"
+
+    - name: VIM - Create pathogen environment
+      file:
+        path: "{{ item }}"
+        state: directory
+      with_items:
+        - "/home/{{ admin_user_name }}/.vim"
+        - "/home/{{ admin_user_name }}/.vim/autoload"
+        - "/home/{{ admin_user_name }}/.vim/bundle"
+
+    - name: VIM - Download pathogen
+      get_url:
+        url: https://tpo.pe/pathogen.vim
+        dest: "/home/{{ admin_user_name }}/.vim/autoload/pathogen.vim"
+        mode: '0777'
+
+    # ---
+    # Manage SSH security and configuration
+    # ---
+    - name: SSH - Set SSH configuration
+      template:
+        src: ./templates/sshd_config.j2
+        dest: /etc/ssh/sshd_config
+      notify:
+        - Restart SSH
+
+    - name: SSH - Set authorized SSH key for root
+      authorized_key:
+        user: root
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        state: present
+      notify:
+        - Restart SSH
+      when: permit_root_login | bool
+
+    # ---
+    # Installation of docker
+    # ---
+    - name: DOCKER - Ensure old versions of docker are not installed
+      package:
+        name:
+          - docker
+          - docker-engine
+        state: absent
+
+    - name: DOCKER - Install packages to allow apt to use a repository over HTTPS
+      apt:
+        name: "{{ docker_package_list }}"
+        state: present
+        update_cache: yes
+
+    - name: DOCKER - Add docker’s official GPG key
+      apt_key:
+        url: "{{ docker_apt_gpg_key }}"
+        id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+        state: present
+
+    - name: DOCKER - Set up the stable docker's repository
+      apt_repository:
+        repo: "{{ docker_apt_repository }}"
+        state: present
+        update_cache: true
+
+    - name: DOCKER - Install docker engine
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      with_items:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+      notify: Restart docker
+
+    - name: DOCKER - Ensure docker is started and enabled at boot
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    # ---
+    # Installation of docker-compose
+    # ---
+    - name: DOCKER-COMPOSE - Delete existing docker-compose version if it exists
+      file:
+        path: "{{ docker_compose_path }}"
+        state: absent
+
+    - name: DOCKER-COMPOSE - Install docker-compose
+      get_url:
+        url: "{{ docker_compose_url }}"
+        dest: "{{ docker_compose_path }}"
+        mode: '0755'
+
+
+  handlers:
+
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted
+
+    - name: Restart docker
+      service:
+        name: docker
+        state: restarted
+
+...

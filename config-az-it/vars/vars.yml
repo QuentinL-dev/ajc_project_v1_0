@@ -1,0 +1,58 @@
+---
+
+#
+# You can add your settings here.
+# These settings will be taken into account when running the playbook.
+#
+
+
+# --- REMOTE HOST INFORMATIONS ---------------------------------------
+admin_user_name: "quentin"
+
+
+# --- PACKAGES TO INSTALL --------------------------------------------
+
+# Useful packages
+package_list: [vim, git, htop, zsh, tmux]
+
+# Required packages for docker installation
+docker_package_list: [apt-transport-https, ca-certificates, curl, gnupg, lsb-release]
+
+
+# --- SHELL CONFIGURATION --------------------------------------------
+
+# The shell to use by default
+shell: "/bin/zsh"
+
+# Github repository for oh-my-zsh cloning
+oh_my_zsh_repo: "https://github.com/robbyrussell/oh-my-zsh"
+
+
+# --- SSH CONFIGURATION ----------------------------------------------
+
+# Permit root login to facilitate system manipulation ("yes" or "no")
+permit_root_login: "yes"
+
+# Limiting the maximum number of connection attempts
+max_auth_tries: "3"
+
+# Disable password authentication to avoid brute-force
+# attack ("yes" or "no")
+password_authentication: "no"
+
+
+# --- DOCKER INSTALLATION --------------------------------------------
+
+# Docker informations
+docker_repo_url: https://download.docker.com/linux
+docker_apt_release_channel: stable
+docker_apt_arch: amd64
+docker_apt_repository: "deb [arch={{ docker_apt_arch }}] {{ docker_repo_url }}/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
+docker_apt_gpg_key: "{{ docker_repo_url }}/{{ ansible_distribution | lower }}/gpg"
+
+# Docker-compose informations
+docker_compose_version: "1.29.0"
+docker_compose_url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64"
+docker_compose_path: /usr/local/bin/docker-compose
+
+...

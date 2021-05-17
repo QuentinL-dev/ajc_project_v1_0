@@ -1,0 +1,9 @@
+---
+
+admin_user_name: quentin
+external_url: http://192.168.1.42
+
+docker_compose_path: "/home/{{ admin_user_name }}/"
+docker_compose_file: docker-compose.docker-gitlab.yml
+
+...

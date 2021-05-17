@@ -1,0 +1,37 @@
+---
+
+- name: AZURE - Public IP address creation - myPublicIP-ad
+  azure_rm_publicipaddress:
+    resource_group: GrpeRessGrp4
+    allocation_method: Static
+    name: myPublicIP-ad
+  register: output_ip_address
+
+- name: AZURE-INFO - Dump public IP for VM which will be created
+  debug:
+    msg: "Adresse IP publique (ad): {{ output_ip_address.state.ip_address }}"
+
+- name: AZURE - Virtual network interface card creation - myNIC-ad
+  azure_rm_networkinterface:
+    resource_group: GrpeRessGrp4
+    name: myNIC-ad
+    virtual_network: myNetwork
+    subnet: mySubnet
+    public_ip_name: myPublicIP-ad
+    security_group: myNetworkSG-windows
+
+- name: AZURE - VM creation - ADGrp4
+  azure_rm_virtualmachine:
+    resource_group: GrpeRessGrp4
+    name: ADGrp4
+    vm_size: Standard_DS1_v2
+    admin_username: gui
+    admin_password: "Azerty123123!"
+    network_interfaces: myNIC-ad
+    image:
+      offer: WindowsServer
+      publisher: MicrosoftWindowsServer
+      sku: 2019-Datacenter
+      version: latest
+
+...

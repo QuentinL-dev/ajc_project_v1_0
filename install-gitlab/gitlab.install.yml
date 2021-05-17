@@ -1,0 +1,54 @@
+---
+
+#
+#
+# INSTALL GITLAB WITH DOCKER
+#
+#
+# INFORMATIONS
+#
+# Maintainer: AJC-GR4
+# Version: 1
+# Release date: 05-17-2021
+#
+#
+# WARNING
+#
+# 1. At least 4 Gio of RAM is required
+#    Consequently, if you are using Azure VM, the size must be 'Standard_B2ms' or higher
+#
+#
+# NOTE
+#
+# 1. Edit ./vars/vars.docker-gitlab.yml to set your own parameters
+#
+#
+
+
+- name: INSTALL GITLAB WITH DOCKER-COMPOSE
+  hosts: azure-gitlab
+  remote_user: "{{ admin_user_name }}"
+  become: yes
+  become_method: su
+  become_user: root
+
+
+
+  vars_files:
+    - ./vars/vars.yml
+
+
+  tasks:
+
+    - name: Set docker-compose file from template
+      template:
+        src: ./templates/docker-compose.docker-gitlab.j2
+        dest: "{{ docker_compose_path }}/{{ docker_compose_file }}"
+        mode: '0700'
+
+    - name: Start GitLab container using shell command
+      command: "docker-compose -f {{ docker_compose_file }} up -d"
+      args:
+        chdir: "{{ docker_compose_path }}"
+
+...

@@ -1,0 +1,40 @@
+---
+
+- name: AZURE - Public IP address creation - myPublicIP-jenkins
+  azure_rm_publicipaddress:
+    resource_group: GrpeRessGrp4
+    allocation_method: Static
+    name: myPublicIP-jenkins
+  register: output_ip_address
+
+- name: AZURE-INFO - Dump public IP for VM which will be created
+  debug:
+    msg: "Adresse IP publique (jenkins): {{ output_ip_address.state.ip_address }}"
+
+- name: AZURE - Virtual network interface card creation - myNIC-jenkins
+  azure_rm_networkinterface:
+    resource_group: GrpeRessGrp4
+    name: myNIC-jenkins
+    virtual_network: myNetwork
+    subnet: mySubnet
+    public_ip_name: myPublicIP-jenkins
+    security_group: myNetworkSG-linux
+
+- name: AZURE - VM creation - JENKINSGrp4
+  azure_rm_virtualmachine:
+    resource_group: GrpeRessGrp4
+    name: JENKINSGrp4
+    vm_size: Standard_DS1_v2
+    admin_username: gui
+    ssh_password_enabled: false
+    ssh_public_keys:
+      - path: /home/gui/.ssh/authorized_keys
+        key_data: "{{lookup('file', '~/.ssh/id_rsa.pub') }}"
+    network_interfaces: myNIC-jenkins
+    image:
+      offer: debian-10
+      publisher: Debian
+      sku: '10'
+      version: latest
+
+...

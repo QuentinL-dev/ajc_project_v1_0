@@ -1,0 +1,10 @@
++---------------------------+
+|  Welcome to build-conf    |
++---------------------------+
+|  Version: 1.0             |
+|  Release date: 05-11-2021 |
++---------------------------+
+
+1. Build configurations
+2. Restore backup
+3. Get help

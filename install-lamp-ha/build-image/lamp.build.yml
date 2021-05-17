@@ -1,0 +1,45 @@
+---
+
+- hosts: builder
+  gather_facts: no
+
+  tasks:
+
+    - name: Create build directory
+      file:
+        path: /root/build-docker
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Copy dockerfile
+      copy:
+        src: ./build-image/Dockerfile
+        dest: /root/build-docker/Dockerfile
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Build docker image
+      docker_image:
+        name: appcontainer:v1.0
+        build:
+          path: /root/build-docker
+          source: build
+        state: present
+
+    - name: Archive image as tarball
+      docker_image:
+        name: appcontainer:v1.0
+        archive_path: /root/appcontainer_v1_0.tar
+        source: pull
+        state: present
+
+    - name: Fetch archived image
+      fetch:
+        src: /root/appcontainer_v1_0.tar
+        dest: ./appcontainer_v1_0.tar
+        flat: true
+
+...

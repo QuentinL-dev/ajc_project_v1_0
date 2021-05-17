@@ -1,0 +1,15 @@
+web:
+  image: 'gitlab/gitlab-ce:latest'
+  restart: always
+  hostname: 'gitlab'
+  environment:
+    GITLAB_OMNIBUS_CONFIG: |
+      external_url "{{ external_url }}"
+  ports:
+    - '80:80'
+    - '443:443'
+    - '22000:22'  # 22000 to avoid SSH port conflict
+  volumes:
+    - '/home/{{ admin_user_name }}/gitlab/config:/etc/gitlab'
+    - '/home/{{ admin_user_name }}/gitlab/log:/var/log/gitlab'
+    - '/home/{{ admin_user_name }}/gitlab/data:/var/opt/gitlab'
